@@ -12,6 +12,10 @@
     <android.support.v7.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/recyclerView_Vocabulary">
+        android:id="@+id/recyclerView_Vocabulary"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:background="?android:attr/colorActivatedHighlight">
     </android.support.v7.widget.RecyclerView>
 </RelativeLayout>

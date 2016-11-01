@@ -25,11 +25,13 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static final String KEY_ID = "_id";
     public static final String ENGLISH_COLUMN = "english";
     public static final String CHINESE_COLUMN = "chinese";
+    public static final String EXAMPLE_COLUMN = "example";
     public static final String STAR_COLUMN = "star";
     public final static String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME
             + " (" + KEY_ID + " INTEGER PRIMARY KEY,"
             + ENGLISH_COLUMN + " TEXT,"
             + CHINESE_COLUMN + " TEXT,"
+            + EXAMPLE_COLUMN + " TEXT,"
             + STAR_COLUMN + " TEXT)";
 
     public SQLiteHelper(Context context) {
@@ -64,32 +66,41 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public void close() {
         db.close();
     }
-    public void update_insert(long _id, String enlish, String chinese, String star) {
-        if(!update(_id,enlish,chinese,star)) insert(enlish,chinese,star);
+    public void update_insert(long _id, String enlish, String chinese, String example, String star) {
+        if(!update(_id,enlish,chinese,example,star)) insert(enlish,chinese,example,star);
     }
     // 新增參數指定的物件
-    public long insert(String enlish, String chinese, String star) {
+    public long insert(String enlish, String chinese, String example, String star) {
         // 建立準備新增資料的ContentValues物件
         ContentValues cv = new ContentValues();
 
         cv.put(ENGLISH_COLUMN, enlish);
         cv.put(CHINESE_COLUMN, chinese);
+        cv.put(EXAMPLE_COLUMN, example);
         cv.put(STAR_COLUMN, star);
-        //cv.put(FRIENDS_COLUMN, friends);
         long id = db.insert(TABLE_NAME, null, cv);
 
         return id;
     }
 
     // 修改參數指定的物件
-    public boolean update(long _id, String enlish, String chinese, String star) {
+    public boolean update(long _id, String enlish, String chinese, String example, String star) {
         // 建立準備修改資料的ContentValues物件
         ContentValues cv = new ContentValues();
 
         cv.put(ENGLISH_COLUMN, enlish);
         cv.put(CHINESE_COLUMN, chinese);
+        cv.put(EXAMPLE_COLUMN, example);
         cv.put(STAR_COLUMN, star);
-        //cv.put(FRIENDS_COLUMN, friends);
+        String where = KEY_ID + "=" + _id;
+
+        // 執行修改資料並回傳修改的資料數量是否成功
+        return db.update(TABLE_NAME, cv, where, null) > 0;
+    }
+    public boolean updateStar(long _id, String star) {
+        // 建立準備修改資料的ContentValues物件
+        ContentValues cv = new ContentValues();
+        cv.put(STAR_COLUMN, star);
         String where = KEY_ID + "=" + _id;
 
         // 執行修改資料並回傳修改的資料數量是否成功
@@ -113,7 +124,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             //String friends = item.get(i).get("friends").toString();
             Log.d("saveToSQLite",name);
             //update_insert(_id,english,chinese,star);//,friends);
-    }
+        }
     }
     public List<Map<String, Object>> getData() {
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
@@ -127,13 +138,25 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         cursor.close();
         return result;
     }
+    public List<Map<String, Object>> getSingleData(String[] _id) {
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        Cursor cursor = db.query(TABLE_NAME, null, "_id=?", _id, null, null, null, null);
+        while (cursor.moveToNext()) {
+            result.add(getRecord(cursor));
+        }
+
+        cursor.close();
+        return result;
+    }
     // 把Cursor目前的資料包裝為物件
     public Map<String, Object> getRecord(Cursor cursor) {
         // 準備回傳結果用的物件
         Map<String, Object> result = new HashMap<String, Object>();
+        result.put("_id",cursor.getString(0));
         result.put("English", cursor.getString(1));
         result.put("Chinese", cursor.getString(2));
-        result.put("Star",cursor.getString(3));
+        result.put("Example",cursor.getString(3));
+        result.put("Star",cursor.getString(4));
         // 回傳結果
         return result;
     }
