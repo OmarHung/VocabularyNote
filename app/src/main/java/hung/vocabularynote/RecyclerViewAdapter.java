@@ -12,6 +12,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,9 +22,11 @@ import java.util.Map;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> implements View.OnClickListener{
     private List<Map<String, Object>> mData;
+    private ArrayList<Integer> mDataType;
     private OnRecyclerViewItemClickListener mOnItemClickListener = null;
     private boolean onBind;
     private Context context;
+    //private static int nowPosition;
     //private OnRecyclerViewCheckedChangedListener mOnCheckedChangedListener = null;
 
     //private ArrayList<Integer> mDataTypes;
@@ -37,14 +40,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     if(!onBind) {
-                        // your process when checkBox changed
-                        // ...
                         if(isChecked) new SQLiteHelper(context).updateStar(Long.valueOf(buttonView.getTag().toString()), "1");
                         else new SQLiteHelper(context).updateStar(Long.valueOf(buttonView.getTag().toString()), "0");
-                        Log.d("isChecked",buttonView.getTag().toString());
+                        //Log.d("isChecked",buttonView.getTag().toString());
                         mData.clear();
                         mData.addAll(new SQLiteHelper(context).getData());
-                        //readSQLite();
                         notifyDataSetChanged();
                     }
                 }
@@ -54,20 +54,26 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             txtExample = (TextView) v.findViewById(R.id.textView_Example);
         }
     }
-    public RecyclerViewAdapter(Context context, List<Map<String, Object>> data) {//, ArrayList<Integer> type) {
+    public RecyclerViewAdapter(Context context, List<Map<String, Object>> data, ArrayList<Integer> type) {//, ArrayList<Integer> type) {
         this.context = context;
         mData = data;
+        mDataType = type;
         //mDataTypes = type;
     }
-    /*
+
     @Override
     public int getItemViewType(int position) {
-        return mDataTypes.get(position);
+        return mDataType.get(position);
     }
-    */
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recyclerview_layout, parent, false);
+        View view;
+        //Log.d("nowPosition",String.valueOf(nowPosition));
+        if(viewType==1)
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recyclerview_end_layout, parent, false);
+        else
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recyclerview_layout, parent, false);
         ViewHolder vh = new ViewHolder(view);
         //将创建的View注册点击事件
         view.setOnClickListener(this);

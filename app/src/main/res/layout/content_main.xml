@@ -16,6 +16,6 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:background="?android:attr/colorActivatedHighlight">
+        android:background="@color/colorAlistair">
     </android.support.v7.widget.RecyclerView>
 </RelativeLayout>

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "528588215608",
+    "project_id": "vocabularynote-148215"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528588215608:android:d34e17552177623c",
+        "android_client_info": {
+          "package_name": "hung.vocabularynote"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528588215608-36809c18r3olgu1g54f469e1n4ibf5ro.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "hung.vocabularynote",
+            "certificate_hash": "66D4A965DADCAA36119913D7FFC6A28291157B4E"
+          }
+        },
+        {
+          "client_id": "528588215608-ae2djini6jodq1retcaps3umohvn3irn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAagvrAuKq1cMJnEIRlYK389P4tIlqsIEQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
