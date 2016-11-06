@@ -1,24 +1,25 @@
 package hung.vocabularynote;
 
+import android.*;
+import android.Manifest;
 import android.app.ProgressDialog;
-import android.content.Context;
+import android.app.backup.BackupManager;
+import android.app.backup.RestoreObserver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
-import android.net.Uri;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.design.widget.TextInputEditText;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -42,60 +43,114 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.DriveContents;
+import com.google.android.gms.drive.DriveFile;
+import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.DriveId;
+import com.google.android.gms.drive.DriveResource;
+import com.google.android.gms.drive.MetadataChangeSet;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+//GoogleApiClient.OnConnectionFailedListener,
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
     private RecyclerView recyclerView;
     private RecyclerViewAdapter recyclerViewAdapter;
     private List<Map<String, Object>> mData = new ArrayList<Map<String, Object>>();
     private ArrayList<Integer> mDataType = new ArrayList<Integer>();
     private SQLiteHelper sqlite;
-    private ImageView imgProfile,imgLogout;
-    private TextView txtName,txtEmail,txtLogin;
-    private LinearLayout linearLayout_Login,linearLayout_NoLogin;
+    //private ImageView imgProfile,imgLogout;
+    //private TextView txtName,txtEmail,txtLogin;
+    //private LinearLayout linearLayout_Login,linearLayout_NoLogin;
+    private int lastSelectedItem=0;
+    private Toolbar toolbar;
+    private NavigationView navigationView;
+    private static final int REQUEST = 0;
 
-    private GoogleApiClient mGoogleApiClient;
-    private static final int RC_SIGN_IN = 0;
-    //private static final int PROFILE_PIC_SIZE = 400;
-    //private String personName = "";
-    //private String personPhotoUrl  = "";
-    //private String email  = "";
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    //private GoogleApiClient client;
-
+    //private GoogleApiClient mGoogleApiClient;
+    //private static final int RC_SIGN_IN = 0;
+    //private static final int REQUEST_CODE_RESOLUTION = 3;
+    //private GoogleApiClient mGoogleDiveApiClient;
+    //private GoogleApiClient mGoogleApiClient;
+    private boolean checkPermission() {
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            return true;
+        else
+            return false;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        initWidget();
-
-        // Configure sign-in to request the user's ID, email address, and basic profile. ID and
-        // basic profile are included in DEFAULT_SIGN_IN.
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .build();
-
-        // Build a GoogleApiClient with access to GoogleSignIn.API and the options above.
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .enableAutoManage(this, this)
-                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-                .build();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        //client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+        if (checkPermission()) {
+            setContentView(R.layout.activity_main);
+            initWidget();
+        }else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST);
+        }
     }
-
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        Log.d("permissions","permissions = "+permissions.length);
+        switch (requestCode) {
+            case REQUEST:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // 取得權限
+                    Log.d("MainActivity", "onRequestPermissionsResult");
+                    setContentView(R.layout.activity_main);
+                    initWidget();
+                } else {
+                    // 未取得權限
+                }
+                break;
+        }
+    }
+    public static final String FILE_DIR = "/hung.vocabularynote.database";
+    public static final String DATABASE_NAME = "vocabulary.db";
+    public void copyDBtoSDCard() {
+        try {
+            String tDBFolderPath = Environment.getExternalStorageDirectory() + FILE_DIR;
+            File dirDBFolder = new File(tDBFolderPath);
+            String tDBFilePath = Environment.getExternalStorageDirectory() + FILE_DIR + File.separator + DATABASE_NAME;
+            File dirDBFile = new File(tDBFilePath);
+            Log.d("SQLite",tDBFilePath);
+            //先檢查該目錄是否存在
+            if (!dirDBFolder.exists()){
+                //若不存在則建立它
+                dirDBFolder.mkdir();
+            }else {
+                if(!dirDBFile.exists()) {
+                    InputStream inputStream = getResources().openRawResource(R.raw.vocabulary);
+                    FileOutputStream fileOutputStream = new FileOutputStream(tDBFilePath);
+                    byte[] tBuffer = new byte[5120];
+                    int tCount = 0;
+                    while ((tCount = inputStream.read(tBuffer)) > 0) {
+                        fileOutputStream.write(tBuffer, 0, tCount);
+                    }
+                    fileOutputStream.close();
+                    inputStream.close();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -105,14 +160,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             super.onBackPressed();
         }
     }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
+        //getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -127,36 +180,44 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
         return super.onOptionsItemSelected(item);
     }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
+        if (id == R.id.nav_all) {
+            Log.d("MainActivity", "全部單字");
+            if(lastSelectedItem!=R.id.nav_all) {
+                toolbar.setTitle("全部單字");
+                readSQLite();
+            }
+            lastSelectedItem = R.id.nav_all;
+        } else if (id == R.id.nav_mark) {
+            Log.d("MainActivity", "不熟單字");
+            if(lastSelectedItem!=R.id.nav_mark) {
+                toolbar.setTitle("不熟單字");
+                readMarkSQLite();
+            }
+            lastSelectedItem = R.id.nav_mark;
         } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+            lastSelectedItem = R.id.nav_share;
+        } else if (id == R.id.nav_score) {
+            lastSelectedItem = R.id.nav_score;
+        } else if (id == R.id.nav_info) {
+            Intent intent = new Intent(this, InformationActivity.class);
+            startActivity(intent);
+            lastSelectedItem = R.id.nav_info;
         }
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
     private void initWidget() {
+        copyDBtoSDCard();
         sqlite=new SQLiteHelper(this);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -167,9 +228,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
+        //lastSelectedItem = R.id.nav_all;
+        //navigationView.getMenu().getItem(0).setChecked(true);
+        //lastSelectedItem = R.id.nav_all;
+        //toolbar.setTitle("全部單字");
+        View header = navigationView.inflateHeaderView(R.layout.nav_header_description);
+        /*
         View header = navigationView.inflateHeaderView(R.layout.nav_header_main);
         imgLogout = (ImageView) header.findViewById(R.id.imageView_logout);
         imgProfile = (ImageView) header.findViewById(R.id.imageView_profile);
@@ -183,10 +249,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         imgLogout.setOnClickListener(this);
         linearLayout_NoLogin.setOnClickListener(this);
         //linearLayout_Login.setVisibility(View.INVISIBLE);
-
+        */
         setRecyclerView();
+        /*
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestScopes(new Scope(Scopes.DRIVE_APPFOLDER))
+                .requestEmail()
+                .build();
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .enableAutoManage(this , this )
+                    .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                    .build();
+        }*/
     }
-
     private void setRecyclerView() {
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView_Vocabulary);
         recyclerViewAdapter = new RecyclerViewAdapter(this,mData,mDataType);//, mDataTypes);
@@ -219,7 +295,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             }
         });
     }
-
     private void readSQLite() {
         mData.clear();
         mData.addAll(sqlite.getData());
@@ -231,37 +306,46 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         recyclerViewAdapter.notifyDataSetChanged();
         //specialUpdate();
     }
+    private void readMarkSQLite() {
+        mData.clear();
+        mData.addAll(sqlite.getMarkData());
+        mDataType.clear();
+        for(int i=0;i<mData.size();i++) {
+            if(i==mData.size()-1) mDataType.add(1);
+            else mDataType.add(0);
+        }
+        recyclerViewAdapter.notifyDataSetChanged();
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.d("MainActivity", "onResume");
+    }
     @Override
     public void onStart() {
         super.onStart();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);
-        if (opr.isDone()) {
-            // If the user's cached credentials are valid, the OptionalPendingResult will be "done"
-            // and the GoogleSignInResult will be available instantly.
-            Log.d("MainActivity", "Got cached sign-in");
-            GoogleSignInResult result = opr.get();
-            handleSignInResult(result);
-        } else {
-            // If the user has not previously signed in on this device or the sign-in has expired,
-            // this asynchronous branch will attempt to sign in the user silently.  Cross-device
-            // single sign-on will occur in this branch.
-            showProgressDialog();
-            opr.setResultCallback(new ResultCallback<GoogleSignInResult>() {
-                @Override
-                public void onResult(GoogleSignInResult googleSignInResult) {
-                    hideProgressDialog();
-                    handleSignInResult(googleSignInResult);
-                }
-            });
+        Log.d("MainActivity", "onStart");
+        /*
+        if(mGoogleApiClient!=null) {
+            OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);// mGoogleApiClient);
+            if (opr.isDone()) {
+                Log.d("MainActivity", "Got cached sign-in");
+                GoogleSignInResult result = opr.get();
+                handleSignInResult(result);
+            } else {
+                showProgressDialog();
+                opr.setResultCallback(new ResultCallback<GoogleSignInResult>() {
+                    @Override
+                    public void onResult(GoogleSignInResult googleSignInResult) {
+                        hideProgressDialog();
+                        handleSignInResult(googleSignInResult);
+                    }
+                });
+            }
         }
+            */
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
-    }
     private void showDialog(final String title, final List<Map<String,Object>> item) {
         LayoutInflater layoutInflater = MainActivity.this.getLayoutInflater();
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -305,30 +389,30 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 builder.setTitle("確定要登出嗎？").setPositiveButton("確認", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        signOut();
-                        Toast.makeText(MainActivity.this,"登出",Toast.LENGTH_SHORT).show();
+                        //signOut();
+                        //Toast.makeText(MainActivity.this,"登出",Toast.LENGTH_SHORT).show();
                     }
                 }).setNegativeButton("取消", null);
                 AlertDialog dialog = builder.create();
                 dialog.show();
                 break;
             case R.id.linear_NoLogin:
-                signIn();
-                Toast.makeText(MainActivity.this,"登入",Toast.LENGTH_SHORT).show();
+                //signIn();
+                //Toast.makeText(MainActivity.this,"登入",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.fab:
                 showDialog("新增單字",null);
                 break;
         }
     }
+    /*
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Log.d("result", connectionResult.toString());
+        Toast.makeText(this,"登入失敗   請確認網路連線良好",Toast.LENGTH_SHORT).show();
     }
     private void handleSignInResult(GoogleSignInResult result) {
         Log.d("MainActivity", "handleSignInResult:" + result.isSuccess());
         if (result.isSuccess()) {
-            // Signed in successfully, show authenticated UI.
             GoogleSignInAccount acct = result.getSignInAccount();
             String personName = acct.getDisplayName();
             String email = acct.getEmail();
@@ -361,23 +445,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             linearLayout_Login.setVisibility(View.GONE);
         }
     }
-    private void revokeAccess() {
-        Auth.GoogleSignInApi.revokeAccess(mGoogleApiClient).setResultCallback(
-                new ResultCallback<Status>() {
-                    @Override
-                    public void onResult(Status status) {
-                        // [START_EXCLUDE]
-                        updateUI(false);
-                        // [END_EXCLUDE]
-                    }
-                });
-    }
     private void signIn() {
-        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);// mGoogleApiClient);
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
     private void signOut() {
-        Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+        Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(// ;mGoogleApiClient).setResultCallback(
                 new ResultCallback<Status>() {
                     @Override
                     public void onResult(Status status) {
@@ -397,20 +470,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
         mProgressDialog.show();
     }
-
     private void hideProgressDialog() {
         if (mProgressDialog != null && mProgressDialog.isShowing()) {
             mProgressDialog.hide();
         }
     }
+    */
     @Override public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        // Result returned from launching the Intent from
-        //   GoogleSignInApi.getSignInIntent(...);
+        /*
         if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             handleSignInResult(result);
-        }
+        } */
     }
 }

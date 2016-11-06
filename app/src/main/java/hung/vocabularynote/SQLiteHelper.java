@@ -2,11 +2,20 @@ package hung.vocabularynote;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,16 +27,20 @@ import java.util.Map;
 
 public class SQLiteHelper extends SQLiteOpenHelper {
     private SQLiteDatabase db;
+    private Context context;
+    //static final String File_Name_Of_Prefrences = "VocabularyNotePrefrences";
+    //static final String PREFS_BACKUP_KEY = "backup";
     private static SQLiteDatabase database;
     public static final int VERSION = 1;
-    public static final String DATABASE_NAME = "Vocabulary.db";
+    public static final String FILE_DIR = "/hung.vocabularynote.database";
+    public static final String DATABASE_NAME = "vocabulary.db";
     public static final String TABLE_NAME = "vocabulary";
     public static final String KEY_ID = "_id";
     public static final String ENGLISH_COLUMN = "english";
     public static final String CHINESE_COLUMN = "chinese";
     public static final String EXAMPLE_COLUMN = "example";
     public static final String STAR_COLUMN = "star";
-    public final static String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME
+    public final static String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME
             + " (" + KEY_ID + " INTEGER PRIMARY KEY,"
             + ENGLISH_COLUMN + " TEXT,"
             + CHINESE_COLUMN + " TEXT,"
@@ -35,7 +48,8 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             + STAR_COLUMN + " TEXT)";
 
     public SQLiteHelper(Context context) {
-        super(context, DATABASE_NAME, null, VERSION);
+        super(context, Environment.getExternalStorageDirectory() + FILE_DIR + File.separator + DATABASE_NAME, null, VERSION);
+        this.context=context;
         db = getDatabase(context);
     }
     public SQLiteHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
@@ -45,7 +59,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     // 需要資料庫的元件呼叫這個方法，這個方法在一般的應用都不需要修改
     public static SQLiteDatabase getDatabase(Context context) {
         if (database == null || !database.isOpen()) {
-            database = new SQLiteHelper(context, DATABASE_NAME, null, VERSION).getWritableDatabase();
+            database = new SQLiteHelper(context, Environment.getExternalStorageDirectory() + FILE_DIR + File.separator + DATABASE_NAME, null, VERSION).getWritableDatabase();
         }
         return database;
     }
@@ -138,6 +152,17 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         cursor.close();
         return result;
     }
+    public List<Map<String, Object>> getMarkData() {
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        Cursor cursor = db.query(
+                TABLE_NAME, null, null, null, null, null, null, null);
+        while (cursor.moveToNext()) {
+            if(cursor.getString(4).equals("1"))
+                result.add(getRecord(cursor));
+        }
+        cursor.close();
+        return result;
+    }
     public List<Map<String, Object>> getSingleData(String[] _id) {
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         Cursor cursor = db.query(TABLE_NAME, null, "_id=?", _id, null, null, null, null);
@@ -160,4 +185,65 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         // 回傳結果
         return result;
     }
+    public void moveDBtoSD() {
+        try {
+            InputStream myInput = new FileInputStream("/data/data/hung.vocabularynote/databases/Vocabulary.db");
+
+            File directory = new File("/sdcard/some_folder");
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            OutputStream myOutput = new FileOutputStream(directory.getPath() + "/AppName.backup");
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = myInput.read(buffer)) > 0) {
+                myOutput.write(buffer, 0, length);
+            }
+
+            myOutput.flush();
+            myOutput.close();
+            myInput.close();
+        }catch (IOException e) {
+
+        }
+    }
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+    /*
+    public void saveToSharedPreferences(List<Map<String, Object>> mData) {
+        try {
+            synchronized (MainActivity.sDataLock) {
+                SharedPreferences sharedPreferences = context.getSharedPreferences(File_Name_Of_Prefrences,0);
+                for(int i=0;i<mData.size();i++) {
+                    String _id = mData.get(i).get("_id").toString();
+                    String english = mData.get(i).get("English").toString();
+                    String chinese = mData.get(i).get("Chinese").toString();
+                    String example = mData.get(i).get("Example").toString();
+                    String star = mData.get(i).get("Star").toString();
+                    String item = _id+"|"+english+"|"+chinese+"|"+example+"|"+star;
+                    sharedPreferences.edit().putString(_id,item).commit();
+                }
+            }
+        } catch (Exception e) {
+            Log.e("SQLiteHelper", "Unable to write to file");
+        }
+    }*/
 }
