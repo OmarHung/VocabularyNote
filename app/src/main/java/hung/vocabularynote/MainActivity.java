@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
             lastSelectedItem = R.id.nav_mark;
         } else if (id == R.id.nav_share) {
-            shareTo("Android app 單字筆記本", "推薦你好用又方便的 Android app「單字筆記本」 https://github.com/OmarHung/VocabularyNote  趕快去下載吧！", "選擇分享對象");
+            shareTo("Android app 單字筆記本", "推薦你好用又方便的 Android app「單字筆記本」 https://play.google.com/store/apps/details?id=hung.vocabularynote  趕快去下載吧！", "選擇分享對象");
             //lastSelectedItem = R.id.nav_share;
         } else if (id == R.id.nav_score) {
             Uri uri = Uri.parse("market://details?id=" + getPackageName());
