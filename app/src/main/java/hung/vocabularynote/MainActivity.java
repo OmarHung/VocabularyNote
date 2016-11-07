@@ -1,18 +1,14 @@
 package hung.vocabularynote;
 
-import android.*;
 import android.Manifest;
-import android.app.ProgressDialog;
-import android.app.backup.BackupManager;
-import android.app.backup.RestoreObserver;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
@@ -31,40 +27,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.Scopes;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.OptionalPendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.drive.Drive;
-import com.google.android.gms.drive.DriveApi;
-import com.google.android.gms.drive.DriveContents;
-import com.google.android.gms.drive.DriveFile;
-import com.google.android.gms.drive.DriveFolder;
-import com.google.android.gms.drive.DriveId;
-import com.google.android.gms.drive.DriveResource;
-import com.google.android.gms.drive.MetadataChangeSet;
-
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -90,10 +57,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     //private GoogleApiClient mGoogleDiveApiClient;
     //private GoogleApiClient mGoogleApiClient;
     private boolean checkPermission() {
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
-            return true;
-        else
-            return false;
+        if(Build.VERSION.SDK_INT >= 23) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+                return true;
+            else
+                return false;
+        }else return true;
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +71,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setContentView(R.layout.activity_main);
             initWidget();
         }else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST);
+            setContentView(R.layout.activity_main_nopermission);
+            initNoPermissionWidget();
         }
     }
     @Override
@@ -153,11 +123,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
+        try {
+            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            if (drawer.isDrawerOpen(GravityCompat.START)) {
+                drawer.closeDrawer(GravityCompat.START);
+            } else {
+                super.onBackPressed();
+            }
+        }catch (Exception e) {
+            Log.d("MainActivity", e.getMessage());
+            finish();
         }
     }
     @Override
@@ -202,13 +177,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             lastSelectedItem = R.id.nav_mark;
         } else if (id == R.id.nav_share) {
             shareTo("Android app 單字筆記本", "推薦你好用又方便的 Android app「單字筆記本」 https://github.com/OmarHung/VocabularyNote  趕快去下載吧！", "選擇分享對象");
-            lastSelectedItem = R.id.nav_share;
+            //lastSelectedItem = R.id.nav_share;
         } else if (id == R.id.nav_score) {
-            lastSelectedItem = R.id.nav_score;
+            Uri uri = Uri.parse("market://details?id=" + getPackageName());
+            Intent goToMarket = new Intent(Intent.ACTION_VIEW, uri);
+            try {
+                startActivity(goToMarket);
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(this,"無法啟動Google Play ! 請確認網路連線後再試",Toast.LENGTH_SHORT).show();
+            }
+            //lastSelectedItem = R.id.nav_score;
         } else if (id == R.id.nav_info) {
             Intent intent = new Intent(this, InformationActivity.class);
             startActivity(intent);
-            lastSelectedItem = R.id.nav_info;
+            //lastSelectedItem = R.id.nav_info;
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -264,6 +246,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     .build();
         }*/
     }
+    private void initNoPermissionWidget() {
+        Button button = (Button) findViewById(R.id.btn_getpermission);
+        button.setOnClickListener(this);
+    }
     private void setRecyclerView() {
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView_Vocabulary);
         recyclerViewAdapter = new RecyclerViewAdapter(this,mData,mDataType);//, mDataTypes);
@@ -287,7 +273,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     public void onClick(DialogInterface dialog, int which) {
                         Log.d("delete",data);
                         sqlite.delete(Long.valueOf(data));
-                        readSQLite();
+                        if(lastSelectedItem==R.id.nav_all || lastSelectedItem==0)
+                            readSQLite();
+                        else if(lastSelectedItem==R.id.nav_mark)
+                            readMarkSQLite();
                     }
                 });
                 final AlertDialog alertDialog = builder.create();
@@ -374,9 +363,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     Log.d("editer", item.get(0).get("English").toString());
                     sqlite.update(Long.valueOf(item.get(0).get("_id").toString()),strEnglish,strChinese,strExample,item.get(0).get("Star").toString());
                 }else {
-                    sqlite.insert(strEnglish, strChinese, strExample, "0");
+                    if(lastSelectedItem==R.id.nav_mark)
+                        sqlite.insert(strEnglish, strChinese, strExample, "1");
+                    else
+                        sqlite.insert(strEnglish, strChinese, strExample, "0");
                 }
-                readSQLite();
+                if(lastSelectedItem==R.id.nav_all || lastSelectedItem==0)
+                    readSQLite();
+                else if(lastSelectedItem==R.id.nav_mark)
+                    readMarkSQLite();
                 alertDialog.cancel();
             }
         });
@@ -403,6 +398,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 break;
             case R.id.fab:
                 showDialog("新增單字",null);
+                break;
+            case R.id.btn_getpermission:
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST);
                 break;
         }
     }

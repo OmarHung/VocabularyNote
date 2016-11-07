@@ -6,6 +6,5 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
-    <string name="server_client_id">528588215608-36809c18r3olgu1g54f469e1n4ibf5ro.apps.googleusercontent.com</string>
     <string name="txt_github">　　本程式屬開源軟體，原始碼在 <a href="https://github.com/OmarHung/VocabularyNote/">Github</a> 中，歡迎各路高手批評指教。</string>
 </resources>

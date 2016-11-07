@@ -1,6 +1,9 @@
 package hung.vocabularynote;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,16 +18,19 @@ import android.view.View;
 import android.widget.TextView;
 
 public class InformationActivity extends AppCompatActivity {
-    TextView txtInfo;
+    TextView txtInfo, txtEditor;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_information);
+        this.setTitle(getString(R.string.app_name)+"  ver."+getVersion(this));
         txtInfo = (TextView) findViewById(R.id.txt_info);
         String url = "　　本程式可供使用者隨時隨地記錄下新學的單字，當手上無紙筆時可作為臨時筆記本，也可隨時拿起手機並開啟程式複習所學的單字，歡迎各路高手批評與指教，使我能更精進此程式。";
         //String url = "　　本程式屬開源軟體，原始碼在 <a href=\"https://github.com/OmarHung/VocabularyNote\">Github</> 中，歡迎各路高手批評指教。";
         txtInfo.setMovementMethod(LinkMovementMethod.getInstance());
         txtInfo.setText(getClickableHtml(url));
+
+        txtEditor = (TextView) findViewById(R.id.txt_editor);
 
     }
     private void setLinkClickable(final SpannableStringBuilder clickableHtmlBuilder, final URLSpan urlSpan) {
@@ -52,5 +58,16 @@ public class InformationActivity extends AppCompatActivity {
             setLinkClickable(clickableHtmlBuilder, span);
         }
         return clickableHtmlBuilder;
+    }
+    public static String getVersion(Context context)
+    {
+        try {
+            PackageInfo pi=context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            return pi.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return "不明版本號";
+        }
     }
 }

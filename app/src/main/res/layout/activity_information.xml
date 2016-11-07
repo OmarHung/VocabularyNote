@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="27dp"
-        android:id="@+id/textView2"
+        android:id="@+id/txt_editor"
         android:layout_alignParentTop="true"
         android:layout_alignLeft="@+id/textView3"
         android:layout_alignStart="@+id/textView3"
@@ -38,9 +38,9 @@
         android:layout_height="wrap_content"
         android:id="@+id/textView3"
         android:autoLink="email"
-        android:layout_below="@+id/textView2"
+        android:layout_below="@+id/txt_editor"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="2dp"
-        android:textSize="18sp" />
+        android:textSize="14sp" />
 
 </RelativeLayout>
