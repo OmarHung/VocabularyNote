@@ -201,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
             lastSelectedItem = R.id.nav_mark;
         } else if (id == R.id.nav_share) {
+            shareTo("Android app 單字筆記本", "推薦你好用又方便的 Android app「單字筆記本」 https://github.com/OmarHung/VocabularyNote  趕快去下載吧！", "選擇分享對象");
             lastSelectedItem = R.id.nav_share;
         } else if (id == R.id.nav_score) {
             lastSelectedItem = R.id.nav_score;
@@ -476,6 +477,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
     */
+    private void shareTo(String subject, String body, String chooserTitle) {
+        Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+        sharingIntent.setType("text/plain");
+        sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
+        sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, body);
+        startActivity(Intent.createChooser(sharingIntent, chooserTitle));
+    }
     @Override public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         /*

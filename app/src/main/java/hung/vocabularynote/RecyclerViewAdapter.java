@@ -42,10 +42,10 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                     if(!onBind) {
                         if(isChecked) new SQLiteHelper(context).updateStar(Long.valueOf(buttonView.getTag().toString()), "1");
                         else new SQLiteHelper(context).updateStar(Long.valueOf(buttonView.getTag().toString()), "0");
-                        //Log.d("isChecked",buttonView.getTag().toString());
-                        mData.clear();
-                        mData.addAll(new SQLiteHelper(context).getData());
-                        notifyDataSetChanged();
+                        Log.d("RecyclerViewAdapter",buttonView.getTag().toString());
+                        //mData.clear();
+                        //mData.addAll(new SQLiteHelper(context).getData());
+                        //notifyDataSetChanged();
                     }
                 }
             });

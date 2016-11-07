@@ -21,7 +21,8 @@ public class InformationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_information);
         txtInfo = (TextView) findViewById(R.id.txt_info);
-        String url = "　　本程式屬開源軟體，原始碼在 <a href=\"https://github.com/OmarHung/VocabularyNote\">Github</> 中，歡迎各路高手批評指教。";
+        String url = "　　本程式可供使用者隨時隨地記錄下新學的單字，當手上無紙筆時可作為臨時筆記本，也可隨時拿起手機並開啟程式複習所學的單字，歡迎各路高手批評與指教，使我能更精進此程式。";
+        //String url = "　　本程式屬開源軟體，原始碼在 <a href=\"https://github.com/OmarHung/VocabularyNote\">Github</> 中，歡迎各路高手批評指教。";
         txtInfo.setMovementMethod(LinkMovementMethod.getInstance());
         txtInfo.setText(getClickableHtml(url));
 

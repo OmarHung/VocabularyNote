@@ -87,13 +87,11 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public long insert(String enlish, String chinese, String example, String star) {
         // 建立準備新增資料的ContentValues物件
         ContentValues cv = new ContentValues();
-
         cv.put(ENGLISH_COLUMN, enlish);
         cv.put(CHINESE_COLUMN, chinese);
         cv.put(EXAMPLE_COLUMN, example);
         cv.put(STAR_COLUMN, star);
         long id = db.insert(TABLE_NAME, null, cv);
-
         return id;
     }
 
@@ -101,13 +99,11 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public boolean update(long _id, String enlish, String chinese, String example, String star) {
         // 建立準備修改資料的ContentValues物件
         ContentValues cv = new ContentValues();
-
         cv.put(ENGLISH_COLUMN, enlish);
         cv.put(CHINESE_COLUMN, chinese);
         cv.put(EXAMPLE_COLUMN, example);
         cv.put(STAR_COLUMN, star);
         String where = KEY_ID + "=" + _id;
-
         // 執行修改資料並回傳修改的資料數量是否成功
         return db.update(TABLE_NAME, cv, where, null) > 0;
     }
@@ -116,7 +112,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put(STAR_COLUMN, star);
         String where = KEY_ID + "=" + _id;
-
         // 執行修改資料並回傳修改的資料數量是否成功
         return db.update(TABLE_NAME, cv, where, null) > 0;
     }
@@ -127,18 +122,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         String where = KEY_ID + "=" + _id;
         // 刪除指定編號資料並回傳刪除是否成功
         return db.delete(TABLE_NAME, where , null) > 0;
-    }
-    public void saveToSQLite(List<Map<String,Object>> item) {
-        for(int i=0;i<item.size();i++) {
-            String name = item.get(i).get("name").toString();
-            String mood = item.get(i).get("mood").toString();
-            String entrydate = item.get(i).get("entrydate").toString();
-            String exitdate = item.get(i).get("exitdate").toString();
-            String facebook_id = item.get(i).get("facebook_id").toString();
-            //String friends = item.get(i).get("friends").toString();
-            Log.d("saveToSQLite",name);
-            //update_insert(_id,english,chinese,star);//,friends);
-        }
     }
     public List<Map<String, Object>> getData() {
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
@@ -184,30 +167,6 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         result.put("Star",cursor.getString(4));
         // 回傳結果
         return result;
-    }
-    public void moveDBtoSD() {
-        try {
-            InputStream myInput = new FileInputStream("/data/data/hung.vocabularynote/databases/Vocabulary.db");
-
-            File directory = new File("/sdcard/some_folder");
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            OutputStream myOutput = new FileOutputStream(directory.getPath() + "/AppName.backup");
-
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = myInput.read(buffer)) > 0) {
-                myOutput.write(buffer, 0, length);
-            }
-
-            myOutput.flush();
-            myOutput.close();
-            myInput.close();
-        }catch (IOException e) {
-
-        }
     }
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
